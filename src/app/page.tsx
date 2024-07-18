@@ -1,113 +1,263 @@
-import Image from "next/image";
+'use client';
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import Header from '@/components/header';
+import Sidebar from '@/components/sidebar';
+import PreviewScreen from '@/components/preview-screen';
+import { Input } from '@/components/ui/input';
+import {
+  CopilotTask,
+  useCopilotContext,
+  useMakeCopilotReadable,
+} from '@copilotkit/react-core';
 
-export default function Home() {
+import CodeEditor from '@/components/codemirror';
+import { LocalContext } from '@/app/shared';
+import { EndpointsContext } from '@/app/agent';
+import { useActions } from '../../utils/client';
+const defualtUI = [
+  `function App() {
+  const [count, setCount] = React.useState(0);
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <div>
+      <h1>Hello, React in CodeMirror!</h1>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>
+        Click me
+      </button>
+    </div>
+  );
+}`,
+];
+export default function Home() {
+  const [code, setCode] = useState<string[]>(defualtUI);
+  const [codeToDisplay, setCodeToDisplay] = useState<string>(code[0] || '');
+  const [showDialog, setShowDialog] = useState<boolean>(false);
+  const [codeCommand, setCodeCommand] = useState<string>('');
+  const [tuneCommand, setTuneCommand] = useState<string>('');
+  const [componentIds, setComponentIds] = useState<string[]>([]);
+  const readableCode = useMakeCopilotReadable(codeToDisplay);
+  const [previewRef, setPreviewRef] = useState<HTMLDivElement | null>(null);
+
+  const actions = useActions<typeof EndpointsContext>();
+
+  const [history, setHistory] = useState<[role: string, content: string][]>([]);
+  const [input, setInput] = useState('');
+  async function onSubmit(input: string) {
+    const newElements = [...code];
+
+    console.log(actions);
+    const result = await actions.agent({
+      input,
+      chat_history: history,
+      file: undefined,
+    });
+    console.log('Result:', result);
+    setCode((prev) => [...prev, result]);
+
+    // consume the value stream to obtain the final value
+    // after which we can append to our chat history state
+    // (async () => {
+    //   let lastEvent = await element.lastEvent;
+    //   if (typeof lastEvent === 'object') {
+    //     if (lastEvent['invokeModel']['result']) {
+    //       setHistory((prev) => [
+    //         ...prev,
+    //         ['user', input],
+    //         ['assistant', lastEvent['invokeModel']['result']],
+    //       ]);
+    //     } else if (lastEvent['invokeTools']) {
+    //       setHistory((prev) => [
+    //         ...prev,
+    //         ['user', input],
+    //         [
+    //           'assistant',
+    //           `Tool result: ${JSON.stringify(
+    //             lastEvent['invokeTools']['toolResult'],
+    //             null
+    //           )}`,
+    //         ],
+    //       ]);
+    //     } else {
+    //       console.log('ELSE!', lastEvent);
+    //     }
+    //   }
+    // })();
+
+    setInput('');
+  }
+  const generateCode = new CopilotTask({
+    instructions: codeCommand,
+    actions: [
+      {
+        name: 'generateCode',
+        description:
+          'generate a single page react app, only react code is allowed, and do not include the import and export lines',
+        // '生成一个完整的HTML页面代码，只能生成html! 做到页面美观， 生成的每一个element都有一个唯一的id',
+        parameters: [
+          {
+            name: 'code',
+            type: 'string',
+            description: 'Code to be generated',
+            required: true,
+          },
+        ],
+        handler: async ({ code }) => {
+          setCode((prev) => [...prev, code]);
+          setCodeToDisplay(code);
+        },
+      },
+    ],
+  });
+  const tuneComponents = new CopilotTask({
+    instructions: tuneCommand,
+    actions: [
+      {
+        name: 'generateCode',
+        description: `修改且仅修改id为${componentIds.join(
+          ','
+        )}的元素的样式，使其更美观, 其余的html文件内容保持不变, 返回修改后的html代码`,
+        parameters: [
+          {
+            name: 'code',
+            type: 'string',
+            description: 'Code to be generated',
+            required: true,
+          },
+        ],
+        handler: async ({ code }) => {
+          setCode((prev) => [...prev, code]);
+          setCodeToDisplay(code);
+        },
+      },
+    ],
+  });
+  const context = useCopilotContext();
+  const ConfirmDeploy = async () => {
+    try {
+      console.log(
+        typeof codeToDisplay,
+        JSON.stringify({ htmlData: codeToDisplay }),
+        { htmlData: codeToDisplay }
+      );
+      const response = await fetch('http://10.10.10.84:8080/api/saveHtml', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: codeToDisplay,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const textResult = await response.text();
+      console.log('Received text:', textResult);
+    } catch (error) {
+      console.error('Failed:', error);
+    }
+  };
+
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  return (
+    <>
+      <main className="bg-white min-h-screen px-4">
+        <Header openCode={() => setShowDialog(true)} />
+        <div className="w-full h-full min-h-[70vh] flex justify-between gap-x-1 ">
+          <Sidebar>
+            <div className="space-y-2 p-4">
+              {code.map((c, i) => (
+                <div
+                  key={i}
+                  className={`w-full h-20 p-1 rounded-md border border-slate-600 items-center justify-center flex cursor-pointer ${
+                    selectedIndex === i ? 'bg-slate-900 text-white' : 'bg-white'
+                  }`}
+                  onClick={() => {
+                    setSelectedIndex(i);
+                    setCodeToDisplay(c);
+                  }}
+                >
+                  v{i}
+                </div>
+              ))}
+            </div>
+          </Sidebar>
+
+          {/* <LocalContext.Provider value={onSubmit}>
+            <div className="flex flex-col w-full gap-1 mt-auto">{code}</div>
+          </LocalContext.Provider> */}
+
+          <div className="w-10/12">
+            <div className="w-full mx-auto p-1 rounded-md bg-primary flex my-4 outline-0">
+              <Input
+                type="text"
+                placeholder="Enter your code command"
+                className="w-10/12 p-6 rounded-l-md  outline-0 bg-primary text-white"
+                // value={codeCommand}
+                // onChange={(e) => setCodeCommand(e.target.value)}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+              <button
+                className="w-2/12 bg-white text-primary rounded-r-md"
+                // onClick={() => generateCode.run(context)}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  await onSubmit(input);
+                }}
+              >
+                Generate
+              </button>
+            </div>
+            <CodeEditor
+              code={codeToDisplay}
+              setCode={setCodeToDisplay}
+              setComponentIds={setComponentIds}
             />
-          </a>
+            {/* <div> Changing components: {componentIds}</div> */}
+            {/* <div className="w-full mx-auto p-1 rounded-md bg-primary flex my-4 outline-0">
+              <Input
+                type="text"
+                placeholder="Enter your code command"
+                className="w-10/12 p-6 rounded-l-md  outline-0 bg-primary text-white"
+                value={tuneCommand}
+                onChange={(e) => setTuneCommand(e.target.value)}
+              />
+              <button
+                className="w-2/12 bg-white text-primary rounded-r-md"
+                onClick={() => tuneComponents.run(context)}
+              >
+                Change
+              </button>
+            </div> */}
+            {/* <PreviewScreen previewRef={previewRef} /> */}
+          </div>
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      </main>
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>View Code.</DialogTitle>
+            <DialogDescription>
+              You can use the following code to start integrating into your
+              application.
+            </DialogDescription>
+            <textarea className="p-4 rounded bg-primary text-white my-2 h-64 overflow-y-auto overflow-x-hidden max-w-inherit">
+              {codeToDisplay}
+            </textarea>
+          </DialogHeader>
+          <Button onClick={ConfirmDeploy}>Confirm Deploy</Button>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
