@@ -1,6 +1,7 @@
 import { agentExecutor } from '@/ai/graph';
 import { exposeEndpoints, streamRunnableUI } from '../../utils/server';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
+import { generateComponent } from '../../utils/generateComponent';
 
 const convertChatHistoryToMessages = (
   chat_history: [role: string, content: string][]
@@ -66,7 +67,15 @@ async function agent(inputs: {
   const resultState = await executor.invoke(processedInputs);
   console.log('Result state:', resultState);
   if (resultState.componentContent) {
-    return resultState.componentContent;
+    generateComponent(
+      resultState.componentDesign.name,
+      resultState.componentContent
+    );
+    return {
+      type: 'component',
+      name: resultState.componentDesign.name,
+      code: resultState.componentContent,
+    };
   }
   if (resultState.result) {
     return resultState.result;

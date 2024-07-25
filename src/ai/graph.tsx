@@ -259,9 +259,11 @@ ${e.docs.use
     },
     config
   );
-
+  function removeCodeWrapper(code: any) {
+    return code.replace(/^```tsx\n([\s\S]*)\n```$/m, '$1');
+  }
   return {
-    componentContent: result.content as string,
+    componentContent: removeCodeWrapper(result.content) as string,
   };
 };
 

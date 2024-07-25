@@ -45,6 +45,7 @@ export default function Home() {
   const [componentIds, setComponentIds] = useState<string[]>([]);
   const readableCode = useMakeCopilotReadable(codeToDisplay);
   const [previewRef, setPreviewRef] = useState<HTMLDivElement | null>(null);
+  const [newComponentName, setNewComponentName] = useState<string>('');
 
   const actions = useActions<typeof EndpointsContext>();
 
@@ -60,8 +61,8 @@ export default function Home() {
       file: undefined,
     });
     console.log('Result:', result);
-    setCode((prev) => [...prev, result]);
-
+    setCode((prev) => [...prev, result.code]);
+    setNewComponentName(result.name);
     // consume the value stream to obtain the final value
     // after which we can append to our chat history state
     // (async () => {
