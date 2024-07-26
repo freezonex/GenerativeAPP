@@ -5,7 +5,7 @@ const PreviewScreen = ({
 }) => {
   return (
     <div
-      id="preview"
+      id="preview-screen"
       ref={previewRef}
       className="w-full h-full bg-white rounded-lg  shadow-lg p-2 border"
     >

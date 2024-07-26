@@ -62,9 +62,6 @@ export default function Home() {
   const [codeCommand, setCodeCommand] = useState<string>('');
   const [tuneCommand, setTuneCommand] = useState<string>('');
   const [componentIds, setComponentIds] = useState<string[]>([]);
-  const readableCode = useMakeCopilotReadable(codeToDisplay);
-  const [previewRef, setPreviewRef] = useState<HTMLDivElement | null>(null);
-  const [input, setInput] = useState('');
 
   const generateCode = new CopilotTask({
     instructions: codeCommand,

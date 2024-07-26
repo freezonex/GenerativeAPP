@@ -45,37 +45,37 @@ const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
 
   const updatePreview = (): void => {
     const previewElement = document.getElementById('preview');
-    console.log('previewElement', previewElement);
     if (previewElement) {
-      //   const parser = new DOMParser();
-      //   const doc = parser.parseFromString(code, 'text/html');
-      //   doc.body.childNodes.forEach((node) => {
-      //     if (node.nodeType === Node.ELEMENT_NODE) {
-      //       const element = node as Element;
-      //       if (!element.id) {
-      //         element.id = `el-${nanoid()}`;
-      //       }
-      //     }
-      //   });
-      //    previewElement.innerHTML = doc.body.innerHTML;
-      previewElement.innerHTML = code;
+      if (!previewElement.shadowRoot) {
+        const shadowRoot = previewElement.attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = code;
+      } else {
+        previewElement.shadowRoot.innerHTML = code;
+      }
+      // previewElement.innerHTML = code;
       bindClicks();
     }
   };
 
   const bindClicks = (): void => {
     const previewElement = document.getElementById('preview');
-    if (previewElement) {
-      previewElement.addEventListener('click', handlePreviewClick);
+    if (previewElement && previewElement.shadowRoot) {
+      previewElement.shadowRoot.addEventListener(
+        'click',
+        handlePreviewClick as EventListener
+      );
     }
   };
 
   const handlePreviewClick = (event: MouseEvent): void => {
-    const target = event.target as HTMLElement;
-    const id = target.id;
-    console.log('id', id);
-    if (id) {
-      setComponentIds([id]);
+    const path = event.composedPath();
+    for (let i = 0; i < path.length; i++) {
+      const element = path[i] as HTMLElement;
+      if (element.id) {
+        console.log('id', element.id);
+        setComponentIds([element.id]);
+        break;
+      }
     }
   };
 
