@@ -4,7 +4,6 @@ import '@copilotkit/react-ui/styles.css';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { CopilotSidebar } from '@copilotkit/react-ui';
-import { EndpointsContext } from './agent';
 const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({
@@ -15,12 +14,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {/* <CopilotKit url="/api/copilotkit/openai/">
+        <CopilotKit url="/api/copilotkit/openai/">
           <CopilotSidebar>{children}</CopilotSidebar>
-        </CopilotKit> */}
-        <div className="flex flex-col p-4 md:p-12 h-[100vh]">
-          <EndpointsContext>{children}</EndpointsContext>
-        </div>
+        </CopilotKit>
       </body>
     </html>
   );

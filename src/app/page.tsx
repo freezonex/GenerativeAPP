@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
-import PreviewScreen from '@/components/preview-screen';
 import { Input } from '@/components/ui/input';
 import {
   CopilotTask,
@@ -19,22 +18,42 @@ import {
 } from '@copilotkit/react-core';
 
 import CodeEditor from '@/components/codemirror';
-import { LocalContext } from '@/app/shared';
-import { EndpointsContext } from '@/app/agent';
-import { useActions } from '../../utils/client';
 const defualtUI = [
-  `function App() {
-  const [count, setCount] = React.useState(0);
-  return (
-    <div>
-      <h1>Hello, React in CodeMirror!</h1>
-      <p>You clicked {count} times</p>
-      <button onClick={() => setCount(count + 1)}>
-        Click me
-      </button>
-    </div>
-  );
-}`,
+  `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Example</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="alert('Button clicked!') id="button-1">Click Me</button>
+</body>
+</html>`,
 ];
 export default function Home() {
   const [code, setCode] = useState<string[]>(defualtUI);
@@ -45,62 +64,16 @@ export default function Home() {
   const [componentIds, setComponentIds] = useState<string[]>([]);
   const readableCode = useMakeCopilotReadable(codeToDisplay);
   const [previewRef, setPreviewRef] = useState<HTMLDivElement | null>(null);
-
-  const actions = useActions<typeof EndpointsContext>();
-
-  const [history, setHistory] = useState<[role: string, content: string][]>([]);
   const [input, setInput] = useState('');
-  async function onSubmit(input: string) {
-    const newElements = [...code];
 
-    console.log(actions);
-    const result = await actions.agent({
-      input,
-      chat_history: history,
-      file: undefined,
-    });
-    console.log('Result:', result);
-    setCode((prev) => [...prev, result]);
-
-    // consume the value stream to obtain the final value
-    // after which we can append to our chat history state
-    // (async () => {
-    //   let lastEvent = await element.lastEvent;
-    //   if (typeof lastEvent === 'object') {
-    //     if (lastEvent['invokeModel']['result']) {
-    //       setHistory((prev) => [
-    //         ...prev,
-    //         ['user', input],
-    //         ['assistant', lastEvent['invokeModel']['result']],
-    //       ]);
-    //     } else if (lastEvent['invokeTools']) {
-    //       setHistory((prev) => [
-    //         ...prev,
-    //         ['user', input],
-    //         [
-    //           'assistant',
-    //           `Tool result: ${JSON.stringify(
-    //             lastEvent['invokeTools']['toolResult'],
-    //             null
-    //           )}`,
-    //         ],
-    //       ]);
-    //     } else {
-    //       console.log('ELSE!', lastEvent);
-    //     }
-    //   }
-    // })();
-
-    setInput('');
-  }
   const generateCode = new CopilotTask({
     instructions: codeCommand,
     actions: [
       {
         name: 'generateCode',
         description:
-          'generate a single page react app, only react code is allowed, and do not include the import and export lines',
-        // '生成一个完整的HTML页面代码，只能生成html! 做到页面美观， 生成的每一个element都有一个唯一的id',
+          // 'generate a single page react app, only react code is allowed, and do not include the import and export lines',
+          '生成一个完整的HTML页面代码，只能生成html! 做到页面美观， 生成的每一个element都有一个唯一的id',
         parameters: [
           {
             name: 'code',
@@ -165,7 +138,6 @@ export default function Home() {
       console.error('Failed:', error);
     }
   };
-
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   return (
     <>
@@ -201,19 +173,12 @@ export default function Home() {
                 type="text"
                 placeholder="Enter your code command"
                 className="w-10/12 p-6 rounded-l-md  outline-0 bg-primary text-white"
-                // value={codeCommand}
-                // onChange={(e) => setCodeCommand(e.target.value)}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
+                value={codeCommand}
+                onChange={(e) => setCodeCommand(e.target.value)}
               />
               <button
                 className="w-2/12 bg-white text-primary rounded-r-md"
-                // onClick={() => generateCode.run(context)}
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  await onSubmit(input);
-                }}
+                onClick={() => generateCode.run(context)}
               >
                 Generate
               </button>
@@ -223,23 +188,6 @@ export default function Home() {
               setCode={setCodeToDisplay}
               setComponentIds={setComponentIds}
             />
-            {/* <div> Changing components: {componentIds}</div> */}
-            {/* <div className="w-full mx-auto p-1 rounded-md bg-primary flex my-4 outline-0">
-              <Input
-                type="text"
-                placeholder="Enter your code command"
-                className="w-10/12 p-6 rounded-l-md  outline-0 bg-primary text-white"
-                value={tuneCommand}
-                onChange={(e) => setTuneCommand(e.target.value)}
-              />
-              <button
-                className="w-2/12 bg-white text-primary rounded-r-md"
-                onClick={() => tuneComponents.run(context)}
-              >
-                Change
-              </button>
-            </div> */}
-            {/* <PreviewScreen previewRef={previewRef} /> */}
           </div>
         </div>
       </main>

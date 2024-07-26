@@ -13,6 +13,7 @@
     "@babel/preset-react": "^7.24.7",
     "@babel/preset-typescript": "^7.24.7",
     "@babel/standalone": "^7.24.7",
+    "@codemirror/lang-html": "^6.4.9",
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-xml": "^6.1.0",
     "@codemirror/view": "^6.28.3",
