@@ -62,6 +62,7 @@ export default function Home() {
   const [codeCommand, setCodeCommand] = useState<string>('');
   const [tuneCommand, setTuneCommand] = useState<string>('');
   const [componentIds, setComponentIds] = useState<string[]>([]);
+  const [fileName, setFileName] = useState('');
 
   const generateCode = new CopilotTask({
     instructions: codeCommand,
@@ -112,12 +113,16 @@ export default function Home() {
   const context = useCopilotContext();
   const ConfirmDeploy = async () => {
     try {
+      const effectiveFileName = fileName.endsWith('.html') ? fileName : `${fileName}.html`;
+      // 构建带查询参数的URL
+      const url = new URL('http://10.10.10.84:8080/api/saveHtml');
+      url.searchParams.append('fileName', effectiveFileName); // 添加fileName作为查询参数
       console.log(
         typeof codeToDisplay,
         JSON.stringify({ htmlData: codeToDisplay }),
         { htmlData: codeToDisplay }
       );
-      const response = await fetch('http://10.10.10.84:8080/api/saveHtml', {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,6 +196,13 @@ export default function Home() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
+            <Input
+                type="text"
+                placeholder="Enter file name"
+                className="w-full p-3 rounded-md outline-0 bg-primary text-white"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+            />
             <DialogTitle>View Code.</DialogTitle>
             <DialogDescription>
               You can use the following code to start integrating into your
