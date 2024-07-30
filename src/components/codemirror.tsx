@@ -63,7 +63,6 @@ const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
       `;
 
         scriptElement.textContent = `
-        console.log('rootDOM1', document.body);
         document.body.addEventListener('mouseover', (e) => {
           if (e.target.id) {
             console.log('hover', e.target.id);
@@ -75,6 +74,7 @@ const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
             e.target.classList.remove('hover-highlight');
           }
         });
+      
       `;
         shadowRoot.appendChild(styleElement);
 
@@ -95,27 +95,89 @@ const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
       `;
 
         scriptElement.textContent = `
-         console.log(document.body);
-          document.body.addEventListener('mouseover', (e) => {
-            if (e.target.id) {
-              console.log('hover', e.target.id);
-              e.target.classList.add('hover-highlight');
-            }
-          });
-          document.body.addEventListener('mouseout', (e) => {
-            if (e.target.id) {
-              e.target.classList.remove('hover-highlight');
-            }
-          });
+       document.body.addEventListener('mouseover', (e) => {
+          if (e.target.id) {
+            console.log('hover', e.target.id);
+            e.target.classList.add('hover-highlight');
+          }
+        });
+        document.body.addEventListener('mouseout', (e) => {
+          if (e.target.id) {
+            e.target.classList.remove('hover-highlight');
+          }
+        });
       `;
 
         previewElement.shadowRoot.prepend(scriptElement);
         previewElement.shadowRoot.prepend(styleElement);
       }
       bindClicks();
+      blindHovers();
+    }
+  };
+  const blindHovers = (): void => {
+    const previewElement = document.getElementById('preview');
+    if (previewElement && previewElement.shadowRoot) {
+      previewElement.shadowRoot.addEventListener(
+        'mouseover',
+        handleHover as EventListener
+      );
+      previewElement.shadowRoot.addEventListener(
+        'mouseover',
+        updateTooltipPosition as EventListener
+      );
+      previewElement.shadowRoot.addEventListener(
+        'mouseout',
+        hideTooltip as EventListener
+      );
+    }
+  };
+  const handleHover = (event: MouseEvent): void => {
+    const path = event.composedPath();
+    for (let i = 0; i < path.length; i++) {
+      const element = path[i] as HTMLElement;
+      if (element.id) {
+        showTooltip(element.id, event);
+        break;
+      }
+    }
+  };
+  let tooltip: HTMLDivElement | null = null;
+
+  const createTooltip = (): void => {
+    tooltip = document.createElement('div');
+    tooltip.id = 'id-tooltip';
+    tooltip.style.position = 'absolute';
+    tooltip.style.display = 'none';
+    tooltip.style.backgroundColor = 'rgba(50, 168, 82, 0.3)';
+    tooltip.style.color = 'white';
+    tooltip.style.fontSize = '12px';
+    tooltip.style.padding = '5px';
+    tooltip.style.borderRadius = '10px';
+    document.body.appendChild(tooltip);
+  };
+
+  const showTooltip = (id: string, event: MouseEvent): void => {
+    if (!tooltip) createTooltip();
+    if (tooltip) {
+      tooltip.textContent = id;
+      tooltip.style.display = 'block';
+      updateTooltipPosition(event);
     }
   };
 
+  const hideTooltip = (): void => {
+    if (tooltip) {
+      tooltip.style.display = 'none';
+    }
+  };
+
+  const updateTooltipPosition = (event: MouseEvent): void => {
+    if (tooltip && tooltip.style.display === 'block') {
+      tooltip.style.left = `${event.clientX + 10}px`;
+      tooltip.style.top = `${event.clientY + 10}px`;
+    }
+  };
   const bindClicks = (): void => {
     const previewElement = document.getElementById('preview');
     if (previewElement && previewElement.shadowRoot) {
