@@ -12,12 +12,14 @@ interface CodeEditorWithPreviewProps {
   code: string;
   setCode: (code: string) => void;
   setComponentIds: (ids: string[]) => void;
+  setShowTuneDialog: (show: boolean) => void;
 }
 
 const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
   code,
   setCode,
   setComponentIds,
+  setShowTuneDialog,
 }) => {
   const previewRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<EditorView | null>(null);
@@ -74,6 +76,8 @@ const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
       if (element.id) {
         console.log('id', element.id);
         setComponentIds([element.id]);
+        console.log('setShowTuneDialog', true);
+        setShowTuneDialog(true);
         break;
       }
     }
