@@ -11,13 +11,11 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import { Input } from '@/components/ui/input';
-import {
-  CopilotTask,
-  useCopilotContext,
-  useMakeCopilotReadable,
-} from '@copilotkit/react-core';
+import { CopilotTask, useCopilotContext } from '@copilotkit/react-core';
 
 import CodeEditor from '@/components/codemirror';
+import LoadingSpinner from '@/components/loadingSpinner';
+import { set } from 'date-fns';
 
 const defualtUI = [
   `<!DOCTYPE html>
@@ -68,6 +66,8 @@ export default function Home() {
 
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [showTuneDialog, setShowTuneDialog] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const prePrompt = String.raw`#prompt
 请生成一个html包含下面所有的客户需求，注意一定要单一html文件完成需求，所有样式文件只能以cdn的方式引入，要完整完成需求。注意，先查询我表中所有的字段，再对字段进行分析。针对已有字段和新需求进行匹配，实现新需求的开发。
 注意下列事项
@@ -164,8 +164,13 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
           },
         ],
         handler: async ({ html_code }) => {
-          setCode((prev) => [...prev, html_code]);
-          setCodeToDisplay(html_code);
+          setIsLoading(true);
+          try {
+            setCode((prev) => [...prev, html_code]);
+            setCodeToDisplay(html_code);
+          } finally {
+            setIsLoading(false);
+          }
         },
       },
     ],
@@ -187,13 +192,17 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
           },
         ],
         handler: async ({ html_code }) => {
-          setCode((prev) => [...prev, html_code]);
-          setCodeToDisplay(html_code);
+          setIsLoading(true);
+          try {
+            setCode((prev) => [...prev, html_code]);
+            setCodeToDisplay(html_code);
+          } finally {
+            setIsLoading(false);
+          }
         },
       },
     ],
   });
-  console.log('selectedIndex', selectedIndex, code.length);
   const context = useCopilotContext();
   const ConfirmDeploy = async () => {
     try {
@@ -247,6 +256,13 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
                   v{i}
                 </div>
               ))}
+              {isLoading && (
+                <div
+                  className={`w-full h-20 p-1 rounded-md border border-slate-600 items-center justify-center flex cursor-pointer bg-white`}
+                >
+                  <LoadingSpinner />
+                </div>
+              )}
             </div>
           </Sidebar>
 
@@ -265,7 +281,10 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
               />
               <button
                 className="w-2/12 bg-white text-primary rounded-r-md"
-                onClick={() => generateCode.run(context)}
+                onClick={() => {
+                  setIsLoading(true);
+                  generateCode.run(context);
+                }}
               >
                 Generate
               </button>
@@ -318,6 +337,7 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
           </DialogHeader>
           <Button
             onClick={() => {
+              setIsLoading(true);
               tuneComponents.run(context);
               setShowTuneDialog(false);
             }}

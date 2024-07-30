@@ -50,11 +50,68 @@ const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
     if (previewElement) {
       if (!previewElement.shadowRoot) {
         const shadowRoot = previewElement.attachShadow({ mode: 'open' });
+        const styleElement = document.createElement('style');
+        const scriptElement = document.createElement('script');
+
+        styleElement.textContent = `
+        * {
+          transition: outline 0.1s ease-in-out;
+        }
+        *[id]:hover, .hover-highlight {
+          background-color: rgba(0, 0, 0, 0.5);
+        }
+      `;
+
+        scriptElement.textContent = `
+        console.log('rootDOM1', document.body);
+        document.body.addEventListener('mouseover', (e) => {
+          if (e.target.id) {
+            console.log('hover', e.target.id);
+            e.target.classList.add('hover-highlight');
+          }
+        });
+        document.body.addEventListener('mouseout', (e) => {
+          if (e.target.id) {
+            e.target.classList.remove('hover-highlight');
+          }
+        });
+      `;
+        shadowRoot.appendChild(styleElement);
+
         shadowRoot.innerHTML = code;
+        shadowRoot.appendChild(scriptElement);
       } else {
         previewElement.shadowRoot.innerHTML = code;
+        const styleElement = document.createElement('style');
+        const scriptElement = document.createElement('script');
+
+        styleElement.textContent = `
+       * {
+          transition: outline 0.1s ease-in-out;
+        }
+        *[id]:hover, .hover-highlight {
+          background-color: rgba(0, 0, 0, 0.5);
+        }
+      `;
+
+        scriptElement.textContent = `
+         console.log(document.body);
+          document.body.addEventListener('mouseover', (e) => {
+            if (e.target.id) {
+              console.log('hover', e.target.id);
+              e.target.classList.add('hover-highlight');
+            }
+          });
+          document.body.addEventListener('mouseout', (e) => {
+            if (e.target.id) {
+              e.target.classList.remove('hover-highlight');
+            }
+          });
+      `;
+
+        previewElement.shadowRoot.prepend(scriptElement);
+        previewElement.shadowRoot.prepend(styleElement);
       }
-      // previewElement.innerHTML = code;
       bindClicks();
     }
   };
@@ -76,7 +133,6 @@ const CodeEditorWithPreview: React.FC<CodeEditorWithPreviewProps> = ({
       if (element.id) {
         console.log('id', element.id);
         setComponentIds([element.id]);
-        console.log('setShowTuneDialog', true);
         setShowTuneDialog(true);
         break;
       }
