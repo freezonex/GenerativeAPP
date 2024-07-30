@@ -115,7 +115,7 @@ export default function Home() {
     try {
       const effectiveFileName = fileName.endsWith('.html') ? fileName : `${fileName}.html`;
       // 构建带查询参数的URL
-      const url = new URL('http://10.10.10.84:8080/api/saveHtml');
+      const url = new URL('http://192.168.31.75:8080/api/saveHtml');
       url.searchParams.append('fileName', effectiveFileName); // 添加fileName作为查询参数
       console.log(
         typeof codeToDisplay,
