@@ -130,15 +130,15 @@ export default function Home() {
 8 严格参考我写明的数据库链接方式，这是与数据库沟通的唯一手段，html前端页面将直接与数据库交互
 
 #写明数据库连接方式
-curl --location --request GET 'http://localhost:8000/rest/v1/{tableName}' \
+curl --location --request GET 'http://192.168.31.75:8000/rest/v1/{tableName}' \
 --header 'apikey: {API Key}'
 
-curl -X POST 'http://localhost:8000/rest/v1/{tableName}' \
+curl -X POST 'http://192.168.31.75:8000/rest/v1/{tableName}' \
 -H "apikey: {API Key}" \
 -H "Content-Type: application/json" \
 -d '[{ "some_column": "someValue" }, { "other_column": "otherValue" }]'
 
-curl --location --request DELETE 'http://localhost:8000/rest/v1/{tableName}?id=eq.1' \
+curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?id=eq.1' \
 --header 'apikey: {API Key}' \
 `;
   const generateCode = new CopilotTask({
