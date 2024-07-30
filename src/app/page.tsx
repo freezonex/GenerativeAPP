@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import {
 } from '@copilotkit/react-core';
 
 import CodeEditor from '@/components/codemirror';
-import { set } from 'date-fns';
+
 const defualtUI = [
   `<!DOCTYPE html>
 <html lang="en">
@@ -66,6 +66,7 @@ export default function Home() {
 
   const [fileName, setFileName] = useState('');
 
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [showTuneDialog, setShowTuneDialog] = useState<boolean>(false);
   const prePrompt = String.raw`#prompt
 请生成一个html包含下面所有的客户需求，注意一定要单一html文件完成需求，所有样式文件只能以cdn的方式引入，要完整完成需求。注意，先查询我表中所有的字段，再对字段进行分析。针对已有字段和新需求进行匹配，实现新需求的开发。
@@ -141,6 +142,11 @@ curl -X POST 'http://192.168.31.75:8000/rest/v1/{tableName}' \
 curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?id=eq.1' \
 --header 'apikey: {API Key}' \
 `;
+  useEffect(() => {
+    if (code.length > 0) {
+      setSelectedIndex(code.length - 1);
+    }
+  }, [code]);
   const generateCode = new CopilotTask({
     instructions: prePrompt + codeCommand,
     actions: [
@@ -151,21 +157,21 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
           '生成一个完整的HTML页面代码，只能生成html! 做到页面美观， 生成的每一个element都有一个唯一的id',
         parameters: [
           {
-            name: 'code',
+            name: 'html_code',
             type: 'string',
             description: 'Code to be generated',
             required: true,
           },
         ],
-        handler: async ({ code }) => {
-          setCode((prev) => [...prev, code]);
-          setCodeToDisplay(code);
+        handler: async ({ html_code }) => {
+          setCode((prev) => [...prev, html_code]);
+          setCodeToDisplay(html_code);
         },
       },
     ],
   });
   const tuneComponents = new CopilotTask({
-    instructions: tuneCommand,
+    instructions: `当前页面的代码为${codeToDisplay}.` + tuneCommand,
     actions: [
       {
         name: 'generateCode',
@@ -174,19 +180,20 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
         )}的元素的样式。返回修改后的html代码, 不修改的区域保持不变。注意，返回值是修改后完整的html页面代码！`,
         parameters: [
           {
-            name: 'code',
+            name: 'html_code',
             type: 'string',
             description: 'Code to be generated',
             required: true,
           },
         ],
-        handler: async ({ code }) => {
-          setCode((prev) => [...prev, code]);
-          setCodeToDisplay(code);
+        handler: async ({ html_code }) => {
+          setCode((prev) => [...prev, html_code]);
+          setCodeToDisplay(html_code);
         },
       },
     ],
   });
+  console.log('selectedIndex', selectedIndex, code.length);
   const context = useCopilotContext();
   const ConfirmDeploy = async () => {
     try {
@@ -219,7 +226,6 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
       console.error('Failed:', error);
     }
   };
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   return (
     <>
       <main className="bg-white min-h-screen px-4">
