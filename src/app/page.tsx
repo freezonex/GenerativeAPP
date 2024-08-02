@@ -280,7 +280,7 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
                 onChange={(e) => setCodeCommand(e.target.value)}
               />
               <button
-                className="w-2/12 bg-white text-primary rounded-r-md"
+                className="w-2/12 bg-white text-primary rounded-r-md "
                 onClick={() => {
                   setIsLoading(true);
                   generateCode.run(context);

@@ -7,7 +7,7 @@ const Header = (props: { openCode: () => void }) => {
       <h1 className="text-xl font-bold">FX Generation BETA</h1>
       <div className="flex gap-x-2">
         <Button
-          className="  px-6 py-1 rounded-md space-x-1"
+          className="  px-6 py-1 rounded-md space-x-1 "
           variant={'default'}
           onClick={props.openCode}
         >
