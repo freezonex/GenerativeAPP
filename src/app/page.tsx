@@ -12,7 +12,7 @@ import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import { Input } from '@/components/ui/input';
 import { CopilotTask, useCopilotContext } from '@copilotkit/react-core';
-
+import { Textarea } from '@/components/ui/textarea';
 import CodeEditor from '@/components/codemirror';
 import LoadingSpinner from '@/components/loadingSpinner';
 import { set } from 'date-fns';
@@ -270,24 +270,23 @@ curl --location --request DELETE 'http://192.168.31.75:8000/rest/v1/{tableName}?
             <div className="flex flex-col w-full gap-1 mt-auto">{code}</div>
           </LocalContext.Provider> */}
 
-          <div className="w-10/12">
-            <div className="w-full mx-auto p-1 rounded-md bg-primary flex my-4 outline-0">
-              <Input
-                type="text"
+          <div className="w-full">
+            <div className="w-full mx-auto p-1 rounded-md my-4 outline-0">
+              <Textarea
                 placeholder="Enter your code command"
-                className="w-10/12 p-6 rounded-l-md  outline-0 bg-primary text-white"
+                className="w-full p-6 rounded-l-md  outline-0 bg-primary text-white"
                 value={codeCommand}
                 onChange={(e) => setCodeCommand(e.target.value)}
               />
-              <button
-                className="w-2/12 bg-white text-primary rounded-r-md "
+              <Button
+                className="w-full rounded-r-md mt-2"
                 onClick={() => {
                   setIsLoading(true);
                   generateCode.run(context);
                 }}
               >
                 Generate
-              </button>
+              </Button>
             </div>
             <CodeEditor
               code={codeToDisplay}
